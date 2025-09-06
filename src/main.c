@@ -4,16 +4,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+char *get_input(char *buff, size_t size);
 char **tokenize(char *input);
 int create_process(char **argv);
 
 int main()
 {
-    char buff[400] = "";
+    size_t sizebuf = 16;
+    char *buff     = malloc(sizebuf);
+
     while (strcmp(buff, "exit") != 0)
     {
-        printf("$ ");
-        fgets(buff, sizeof(buff), stdin);
+        buff                      = get_input(buff, sizebuf);
         buff[strcspn(buff, "\n")] = 0;
         char **arr                = tokenize(buff);
         int size                  = 0;
@@ -29,12 +31,37 @@ int main()
     }
 }
 
+char *get_input(char *buff, size_t size)
+{
+    size_t len = 0;
+    int c;
+
+    printf("$ ");
+    while ((c = getchar()) != EOF && c != '\n')
+    {
+        if (len + 1 >= size)
+        {
+            size      = 2 * size;
+            char *tmp = realloc(buff, size);
+            if (!tmp)
+            {
+                free(buff);
+                fprintf(stderr, "Failed allocation");
+                return NULL;
+            }
+            buff = tmp;
+        }
+        buff[len++] = (char)c;
+    }
+    buff[len] = '\0';
+    return buff;
+}
+
 char **tokenize(char *input)
 {
     char **arr = NULL;
     int size   = 0;
     char *tok  = strtok(input, " ");
-    int i      = 0;
     while (tok != NULL)
     {
         arr = realloc(arr, (size + 1) * sizeof(char *));
@@ -44,7 +71,6 @@ char **tokenize(char *input)
         strcpy(arr[size], tok);
         size++;
 
-        i++;
         tok = strtok(NULL, " ");
     }
 
