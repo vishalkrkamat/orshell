@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,39 @@
 char *get_input(char *buff, size_t size);
 char **tokenize(char *input);
 int create_process(char **argv);
+int ch_dir(char **path);
+
+int ch_dir(char **path)
+{
+    if (path[1] == NULL) {
+        fprintf(stderr, "cd: missing argument\n");
+        return -1;
+    }
+
+    int result = chdir(path[1]);
+
+    if (result == -1) {
+        if (errno == ENOENT) {
+            printf("Directory does not exist\n");
+        } else if (errno == EACCES) {
+            printf("Acces denied\n");
+        } else {
+            printf("Some other erro %s\n", strerror(errno));
+        }
+    }
+    return result;
+}
+
+int inbuilt(char **argv)
+{
+    char *inbuilt_command[] = {"cd", NULL};
+    for (int i = 0; inbuilt_command[i] != NULL; i++) {
+        if (strcmp(argv[0], inbuilt_command[i]) == 0) {
+            return ch_dir(argv);
+        }
+    }
+    return create_process(argv);
+}
 
 int main()
 {
@@ -18,12 +52,17 @@ int main()
         if (strcmp(buff, "exit") == 0)
             exit(0);
         buff[strcspn(buff, "\n")] = 0;
-        char **arr                = tokenize(buff);
-        create_process(arr);
-        for (int i = 0; arr[i] != NULL; i++) {
-            free(arr[i]);
+        char **argv               = tokenize(buff);
+
+        if (argv == NULL || argv[0] == NULL) {
+            continue;
         }
-        free(arr);
+
+        inbuilt(argv);
+        for (int i = 0; argv[i] != NULL; i++) {
+            free(argv[i]);
+        }
+        free(argv);
     }
 }
 
@@ -47,6 +86,9 @@ char *get_input(char *buff, size_t size)
         buff[len++] = (char)c;
     }
     buff[len] = '\0';
+    if (buff == NULL) {
+        printf("its null");
+    }
     return buff;
 }
 
