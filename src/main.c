@@ -86,9 +86,6 @@ char *get_input(char *buff, size_t size)
         buff[len++] = (char)c;
     }
     buff[len] = '\0';
-    if (buff == NULL) {
-        printf("its null");
-    }
     return buff;
 }
 
